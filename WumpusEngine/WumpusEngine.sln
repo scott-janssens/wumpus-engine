@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WumpusEngine", "WumpusEngine.csproj", "{BCF1EB61-114A-4600-99A1-2A1A728EAC69}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WumpusEngineTests", "..\WumpusEngineTests\WumpusEngineTests.csproj", "{32F811B4-C8F6-4722-91C5-07DEFC0AB60A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCF1EB61-114A-4600-99A1-2A1A728EAC69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCF1EB61-114A-4600-99A1-2A1A728EAC69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCF1EB61-114A-4600-99A1-2A1A728EAC69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCF1EB61-114A-4600-99A1-2A1A728EAC69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32F811B4-C8F6-4722-91C5-07DEFC0AB60A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32F811B4-C8F6-4722-91C5-07DEFC0AB60A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32F811B4-C8F6-4722-91C5-07DEFC0AB60A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32F811B4-C8F6-4722-91C5-07DEFC0AB60A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D77554C5-AFC6-4017-A24E-72B2BA0FA4D3}
+	EndGlobalSection
+EndGlobal
