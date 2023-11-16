@@ -31,6 +31,11 @@ public class Cavern
 
     public bool IsRevealed { get; private set; } = false;
 
+    /// <summary>
+    /// If the player is in this cavern, the direction the player moved into this cavern, otherwise null.
+    /// </summary>
+    public Direction? PlayerDirection { get; internal set; }
+
     public Location Location { get; }
 
     public Cavern(Location location)

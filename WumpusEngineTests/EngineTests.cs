@@ -26,140 +26,232 @@ namespace WumpusEngineTests
         public void EngineMovePlayerNorth()
         {
             MovePlayerHelper(Direction.North, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.North)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.North)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.North));
+            });
         }
 
         [Test]
         public void EngineMovePlayerEast()
         {
             MovePlayerHelper(Direction.East, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.East)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.East)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.East));
+            });
         }
 
         [Test]
         public void EngineMovePlayerSouth()
         {
             MovePlayerHelper(Direction.South, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.South)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.South)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.South));
+            });
         }
 
         [Test]
         public void EngineMovePlayerWest()
         {
             MovePlayerHelper(Direction.West, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.West)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.West)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.West));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelNorthLastNorth()
         {
             MovePlayer4WayTunnelHelper(Direction.North, Direction.North, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.North));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelNorthLastEast()
         {
             MovePlayer4WayTunnelHelper(Direction.East, Direction.North, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.North)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.North)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.North));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelNorthLastSouth()
         {
             MovePlayer4WayTunnelHelper(Direction.South, Direction.North, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.North)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.North)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.North));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelNorthLastWest()
         {
             MovePlayer4WayTunnelHelper(Direction.West, Direction.North, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.North));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelEastLastNorth()
         {
             MovePlayer4WayTunnelHelper(Direction.North, Direction.East, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.East)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.East)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.East));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelEastLastEast()
         {
             MovePlayer4WayTunnelHelper(Direction.East, Direction.East, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.East));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelEastLastSouth()
         {
             MovePlayer4WayTunnelHelper(Direction.South, Direction.East, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.East));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelEastLastWest()
         {
             MovePlayer4WayTunnelHelper(Direction.West, Direction.East, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.East)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.East)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.East));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelSouthLastNorth()
         {
             MovePlayer4WayTunnelHelper(Direction.North, Direction.South, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.South)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.South)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.South));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelSouthLastEast()
         {
             MovePlayer4WayTunnelHelper(Direction.East, Direction.South, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.South));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelSouthLastSouth()
         {
             MovePlayer4WayTunnelHelper(Direction.South, Direction.South, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.South));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelSouthLastWest()
         {
             MovePlayer4WayTunnelHelper(Direction.West, Direction.South, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.South)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.South)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.South));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelWestLastNorth()
         {
             MovePlayer4WayTunnelHelper(Direction.North, Direction.West, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.West));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelWestLastEast()
         {
             MovePlayer4WayTunnelHelper(Direction.East, Direction.West, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.West)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.West)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.West));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelWestLastSouth()
         {
             MovePlayer4WayTunnelHelper(Direction.South, Direction.West, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.West)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location.ToDirection(Direction.West)));
+                Assert.That(startCave.PlayerDirection, Is.Null);
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.West));
+            });
         }
 
         [Test]
         public void EngineMovePlayerLast4WayTunnelWestLastWest()
         {
             MovePlayer4WayTunnelHelper(Direction.West, Direction.West, out var startCave, out var endCave);
-            Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(endCave.Location, Is.EqualTo(startCave.Location));
+                Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.West));
+            });
         }
 
         [Test]
@@ -190,7 +282,7 @@ namespace WumpusEngineTests
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
-            engine.SetPlayerLocation(wumpus[direction]!.Location);
+            engine.SetPlayerLocation(wumpus[direction]!.Location, direction);
             engine.MovePlayer(CavernTests.Opposite(direction));
 
             Assert.That(engine.GameState, Is.EqualTo(GameState.Eaten));
@@ -205,7 +297,7 @@ namespace WumpusEngineTests
 
             ClearWumpus(engine.Map);
 
-            engine.SetPlayerLocation(engine.Map[pit[direction]!.Location]!.Location);
+            engine.SetPlayerLocation(engine.Map[pit[direction]!.Location]!.Location, direction);
             engine.MovePlayer(CavernTests.Opposite(direction));
 
             
@@ -222,7 +314,7 @@ namespace WumpusEngineTests
 
             ClearWumpus(engine.Map);
 
-            engine.SetPlayerLocation(engine.Map[bat[direction]!.Location]!.Location);
+            engine.SetPlayerLocation(engine.Map[bat[direction]!.Location]!.Location, direction);
 
             var randomMock = new Mock<IRandom>();
             randomMock.SetupSequence(x => x.Next(It.IsAny<int>())).Returns(0).Returns((int)wumpus.Location.Column).Returns((int)wumpus.Location.Row);
@@ -241,7 +333,7 @@ namespace WumpusEngineTests
 
             ClearWumpus(engine.Map);
 
-            engine.SetPlayerLocation(engine.Map[bat[direction]!.Location]!.Location);
+            engine.SetPlayerLocation(engine.Map[bat[direction]!.Location]!.Location, direction);
 
             var randomMock = new Mock<IRandom>();
             randomMock.Setup(x => x.Next(It.IsAny<int>())).Returns(99);
@@ -259,7 +351,7 @@ namespace WumpusEngineTests
             var direction = CavernTests.GetValidDirection(wumpus);
 
             wumpus.HasBat = true;
-            engine.SetPlayerLocation(wumpus[direction]!.Location);
+            engine.SetPlayerLocation(wumpus[direction]!.Location, direction);
             engine.MovePlayer(CavernTests.Opposite(direction));
 
             Assert.Multiple(() =>
@@ -279,7 +371,7 @@ namespace WumpusEngineTests
             ClearWumpus(engine.Map);
             pit.HasBat = true;
 
-            engine.SetPlayerLocation(engine.Map[pit[direction]!.Location].Location);
+            engine.SetPlayerLocation(engine.Map[pit[direction]!.Location].Location, direction);
             engine.MovePlayer(CavernTests.Opposite(direction));
 
             Assert.Multiple(() =>
@@ -299,7 +391,7 @@ namespace WumpusEngineTests
             wumpus.IsPit = true;
             wumpus.HasBat = true;
 
-            engine.SetPlayerLocation(wumpus[direction]!.Location);
+            engine.SetPlayerLocation(wumpus[direction]!.Location, direction);
             engine.MovePlayer(CavernTests.Opposite(direction));
 
             Assert.Multiple(() =>
@@ -316,7 +408,7 @@ namespace WumpusEngineTests
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
-            engine.SetPlayerLocation(wumpus[direction]!.Location);
+            engine.SetPlayerLocation(wumpus[direction]!.Location, direction);
             engine.FireArrow(CavernTests.Opposite(direction));
 
             Assert.That(engine.GameState, Is.EqualTo(GameState.Won));
@@ -329,7 +421,7 @@ namespace WumpusEngineTests
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
-            engine.SetPlayerLocation(wumpus[direction]!.Location);
+            engine.SetPlayerLocation(wumpus[direction]!.Location, direction);
             engine.Map[engine.PlayerLocation][direction] = engine.Map[engine.PlayerLocation];
             engine.FireArrow(direction);
 
@@ -343,7 +435,7 @@ namespace WumpusEngineTests
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
-            engine.SetPlayerLocation(wumpus[direction]!.Location);
+            engine.SetPlayerLocation(wumpus[direction]!.Location, direction);
             _ = direction switch
             {
                 Direction.North => engine.Map[engine.PlayerLocation].North = null,
@@ -370,7 +462,7 @@ namespace WumpusEngineTests
             }
 
             ClearWumpus(engine.Map);
-            engine.SetPlayerLocation(startCavern.Location);
+            engine.SetPlayerLocation(startCavern.Location, direction);
             engine.MovePlayer(direction);
 
             startCave = startCavern;
@@ -389,7 +481,7 @@ namespace WumpusEngineTests
             }
 
             engine.Map.ResetBats();
-            engine.SetPlayerLocation(startCavern.Location);
+            engine.SetPlayerLocation(startCavern.Location, lastDirection);
             engine.SetLastDirection(lastDirection);
             startCave = startCavern;
 

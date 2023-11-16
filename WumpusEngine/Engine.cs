@@ -26,7 +26,7 @@ public class Engine
 
             if (cavern.IsCave && !cavern.IsPit && !cavern.HasWumpus)
             {
-                SetPlayerLocation(loc);
+                SetPlayerLocation(loc, Direction.West);
                 cavern.Reveal();
             }
         }
@@ -79,14 +79,24 @@ public class Engine
 
         if (newLocation != null)
         {
-            SetPlayerLocation(newLocation);
+            SetPlayerLocation(newLocation, direction);
+        }
+        else
+        {
+            Map[PlayerLocation].PlayerDirection = direction;
         }
     }
 
-    internal void SetPlayerLocation(Location location)
+    internal void SetPlayerLocation(Location location, Direction direction)
     {
+        if (PlayerLocation != null)
+        {
+            Map[PlayerLocation].PlayerDirection = null;
+        }
+
         PlayerLocation = location;
         var newCavern = Map[PlayerLocation];
+        newCavern.PlayerDirection = direction;
         newCavern.Reveal();
 
         if (newCavern.HasBat && (newCavern.HasWumpus || newCavern.IsPit || Map.DifficultyOptions.BatCarryPct > _random.Next(100)))
@@ -109,7 +119,7 @@ public class Engine
 
             // TODO: Add some sort of notify here
 
-            SetPlayerLocation(newPlayerLocation);
+            SetPlayerLocation(newPlayerLocation, direction);
         }
         else if (newCavern.HasWumpus)
         {
