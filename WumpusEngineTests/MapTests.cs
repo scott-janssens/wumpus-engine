@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Lea;
+using Moq;
 using System.Diagnostics.CodeAnalysis;
 using WumpusEngine;
 
@@ -7,10 +8,18 @@ namespace WumpusEngineTests
     [ExcludeFromCodeCoverage]
     public class MapTests
     {
+        private Mock<IEventAggregator> _eventAggregatorMock;
+
+        [SetUp]
+        public void Setup()
+        {
+            _eventAggregatorMock = new Mock<IEventAggregator>();
+        }
+
         [Test]
         public void MapCtor()
         {
-            var actual = new Map(DifficultyOptions.Easy);
+            var actual = new Map(_eventAggregatorMock.Object, DifficultyOptions.Easy);
 
             Assert.That(actual.DifficultyOptions.Difficulty, Is.EqualTo(GameDifficulty.Easy));
         }
@@ -18,7 +27,7 @@ namespace WumpusEngineTests
         [Test]
         public void MapCtorRandom()
         {
-            var actual = new Map(DifficultyOptions.Hard, new RandomHelper());
+            var actual = new Map(_eventAggregatorMock.Object, DifficultyOptions.Hard, new RandomHelper());
 
             Assert.That(actual.DifficultyOptions.Difficulty, Is.EqualTo(GameDifficulty.Hard));
         }
@@ -26,7 +35,7 @@ namespace WumpusEngineTests
         [Test]
         public void MapSetRandomBatLocation()
         {
-            var map = new Map(new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 0));
+            var map = new Map(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 0));
             map.SetRandomBatLocation();
 
             var actual = GetCavernWhere(map, c => c.HasBat).SingleOrDefault();
@@ -37,7 +46,7 @@ namespace WumpusEngineTests
         [Test]
         public void MapSetRandomBatLocationAvoidBatCollision()
         {
-            var map = new Map(new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 0));
+            var map = new Map(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 0));
             var loc1 = new Location(2, 2);
             var loc2 = new Location(4, 4);
             var randomMock = new Mock<IRandom>();
@@ -63,7 +72,7 @@ namespace WumpusEngineTests
         [Test]
         public void MapSetRandomBatLocationAvoidTunnel()
         {
-            var map = new Map(new DifficultyOptions(GameDifficulty.Normal, 0, 0, 15, 0));
+            var map = new Map(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 0, 0, 15, 0));
             var loc1 = GetCavernWhere(map, c => !c.IsCave).First().Location;
             var loc2 = GetCavernWhere(map, c => c.IsCave).First().Location;
             var randomMock = new Mock<IRandom>();
@@ -88,7 +97,7 @@ namespace WumpusEngineTests
         [Test]
         public void MapGetWumpusCavern()
         {
-            var map = new Map(DifficultyOptions.Normal, new RandomHelper());
+            var map = new Map(_eventAggregatorMock.Object, DifficultyOptions.Normal, new RandomHelper());
             var expected = map.Caverns.Cast<Cavern>().Single(x => x.HasWumpus);
             var actual = map.GetWumpusCavern();
 
@@ -98,7 +107,7 @@ namespace WumpusEngineTests
         [Test]
         public void MapGetPitCaverns()
         {
-            var map = new Map(DifficultyOptions.Normal, new RandomHelper());
+            var map = new Map(_eventAggregatorMock.Object, DifficultyOptions.Normal, new RandomHelper());
             var expected = map.Caverns.Cast<Cavern>().Where(x => x.IsPit);
             var actual = map.GetPitCaverns();
 

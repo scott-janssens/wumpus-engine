@@ -1,6 +1,8 @@
-﻿using Moq;
+﻿using Lea;
+using Moq;
 using System.Diagnostics.CodeAnalysis;
 using WumpusEngine;
+using WumpusEngine.Events;
 
 namespace WumpusEngineTests
 {
@@ -9,11 +11,18 @@ namespace WumpusEngineTests
     {
         private static readonly DifficultyOptions DifficultyOptionsBasic = new(GameDifficulty.Normal, 0, 0, 15, 0);
         private static readonly DifficultyOptions DifficultyOptionsMinimal = new(GameDifficulty.Normal, 0, 0, 0, 0);
+        private Mock<IEventAggregator> _eventAggregatorMock;
+
+        [SetUp]
+        public void Setup()
+        {
+            _eventAggregatorMock = new Mock<IEventAggregator>();
+        }
 
         [Test]
         public void EngineCtor()
         {
-            var actual = new Engine(DifficultyOptionsBasic, new RandomHelper());
+            var actual = new Engine(_eventAggregatorMock.Object, DifficultyOptionsBasic, new RandomHelper());
 
             Assert.Multiple(() =>
             {
@@ -32,6 +41,8 @@ namespace WumpusEngineTests
                 Assert.That(startCave.PlayerDirection, Is.Null);
                 Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.North));
             });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == endCave)), Times.Once);
         }
 
         [Test]
@@ -44,6 +55,8 @@ namespace WumpusEngineTests
                 Assert.That(startCave.PlayerDirection, Is.Null);
                 Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.East));
             });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == endCave)), Times.Once);
         }
 
         [Test]
@@ -56,6 +69,8 @@ namespace WumpusEngineTests
                 Assert.That(startCave.PlayerDirection, Is.Null);
                 Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.South));
             });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == endCave)), Times.Once);
         }
 
         [Test]
@@ -68,6 +83,8 @@ namespace WumpusEngineTests
                 Assert.That(startCave.PlayerDirection, Is.Null);
                 Assert.That(endCave.PlayerDirection, Is.EqualTo(Direction.West));
             });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == endCave)), Times.Once);
         }
 
         [Test]
@@ -257,14 +274,14 @@ namespace WumpusEngineTests
         [Test]
         public void EngineMovePlayerBadDirection()
         {
-            var engine = new Engine(DifficultyOptionsBasic, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsBasic, new RandomHelper());
             Assert.Throws<ArgumentOutOfRangeException>(() => engine.MovePlayer((Direction)42));
         }
 
         [Test]
         public void EngineMovePlayerNotRunning()
         {
-            var engine = new Engine(DifficultyOptionsBasic, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsBasic, new RandomHelper());
             var expected = engine.PlayerLocation;
             var cavern = engine.Map[engine.PlayerLocation];
             var direction = CavernTests.GetValidDirection(cavern);
@@ -278,7 +295,7 @@ namespace WumpusEngineTests
         [Test]
         public void EngineMovePlayerEndGameWumpus()
         {
-            var engine = new Engine(DifficultyOptionsMinimal, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
@@ -291,7 +308,7 @@ namespace WumpusEngineTests
         [Test]
         public void EngineMovePlayerEndGamePit()
         {
-            var engine = new Engine(new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 3), new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 3), new RandomHelper());
             var pit = MapTests.GetCavernWhere(engine.Map, c => c.IsPit).First();
             var direction = CavernTests.GetValidDirection(pit);
 
@@ -300,40 +317,62 @@ namespace WumpusEngineTests
             engine.SetPlayerLocation(engine.Map[pit[direction]!.Location]!.Location, direction);
             engine.MovePlayer(CavernTests.Opposite(direction));
 
-            
+
             Assert.That(engine.GameState, Is.EqualTo(GameState.Pit));
         }
 
         [Test]
         public void EngineMovePlayerIntoBatCarry()
         {
-            var engine = new Engine(new DifficultyOptions(GameDifficulty.Normal, 1, 50, 0, 0), new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 0, 100, 0, 0), new RandomHelper());
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
-            var bat = MapTests.GetCavernWhere(engine.Map, c => c.HasBat).Single();
-            var direction = CavernTests.GetValidDirection(bat);
+            var batStartCavern = engine.Map[wumpus.Location.ToDirection(Direction.North).ToDirection(Direction.East)];
+            var direction = CavernTests.GetValidDirection(batStartCavern);
+
+            batStartCavern.HasBat = true;
 
             ClearWumpus(engine.Map);
 
-            engine.SetPlayerLocation(engine.Map[bat[direction]!.Location]!.Location, direction);
+            engine.SetPlayerLocation(engine.Map[batStartCavern[direction]!.Location]!.Location, direction);
+            var newPlayerLocation = wumpus.Location;
+            var newBatLocation = wumpus.Location.ToDirection(Direction.South).ToDirection(Direction.West);
+
+            engine.Map[newBatLocation].IsCave = true;
+            engine.Map[newBatLocation].HasBat = false;
 
             var randomMock = new Mock<IRandom>();
-            randomMock.SetupSequence(x => x.Next(It.IsAny<int>())).Returns(0).Returns((int)wumpus.Location.Column).Returns((int)wumpus.Location.Row);
+            randomMock.SetupSequence(x => x.Next(It.IsAny<uint>()))
+                .Returns((int)newPlayerLocation.Row)
+                .Returns((int)newPlayerLocation.Column)
+                .Returns((int)newBatLocation.Row)
+                .Returns((int)newBatLocation.Column);
             engine.Random = randomMock.Object;
             engine.MovePlayer(CavernTests.Opposite(direction));
 
-            Assert.That(engine.PlayerLocation, Is.Not.EqualTo(bat.Location));
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.PlayerLocation, Is.Not.EqualTo(batStartCavern.Location));
+                Assert.That(engine.PlayerLocation, Is.EqualTo(newPlayerLocation));
+                Assert.That(batStartCavern.HasBat, Is.False);
+                Assert.That(engine.Map[newBatLocation].HasBat, Is.True);
+            });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<BatMoved>(x =>
+                x.StartLocation.Equals(batStartCavern.Location) &&
+                x.PlayerLocation.Equals(engine.PlayerLocation) &&
+                x.BatLocation.Equals(newBatLocation) &&
+                x.GameStateChanged == false)));
         }
 
         [Test]
         public void EngineMovePlayerIntoBatNoCarry()
         {
-            var engine = new Engine(new DifficultyOptions(GameDifficulty.Normal, 1, 50, 0, 0), new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 1, 50, 0, 0), new RandomHelper());
             var bat = MapTests.GetCavernWhere(engine.Map, c => c.HasBat).First();
             var direction = CavernTests.GetValidDirection(bat);
 
             ClearWumpus(engine.Map);
-
-            engine.SetPlayerLocation(engine.Map[bat[direction]!.Location]!.Location, direction);
+            engine.SetPlayerLocation(bat.Location.ToDirection(direction), direction);
 
             var randomMock = new Mock<IRandom>();
             randomMock.Setup(x => x.Next(It.IsAny<int>())).Returns(99);
@@ -341,12 +380,13 @@ namespace WumpusEngineTests
             engine.MovePlayer(CavernTests.Opposite(direction));
 
             Assert.That(engine.PlayerLocation, Is.EqualTo(bat.Location));
-        }
+            _eventAggregatorMock.Verify(x => x.Publish(It.IsAny<BatMoved>()), Times.Never);
+         }
 
         [Test]
         public void EngineMovePlayerBatSavesFromWumpus()
         {
-            var engine = new Engine(DifficultyOptionsMinimal, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
@@ -364,7 +404,7 @@ namespace WumpusEngineTests
         [Test]
         public void EngineMovePlayerBatSavesFromPit()
         {
-            var engine = new Engine(new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 1), new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 0, 0, 0, 1), new RandomHelper());
             var pit = MapTests.GetCavernWhere(engine.Map, c => c.IsPit).Single();
             var direction = CavernTests.GetValidDirection(pit);
 
@@ -384,7 +424,7 @@ namespace WumpusEngineTests
         [Test]
         public void EngineMovePlayerBatSavesFromWumpusAndPit()
         {
-            var engine = new Engine(DifficultyOptionsMinimal, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
@@ -402,22 +442,119 @@ namespace WumpusEngineTests
         }
 
         [Test]
+        public void EngineMovePlayerBatDropsOnWumpus()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 0, 100, 0, 0), new RandomHelper());
+
+            var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
+            var batStart = engine.Map[wumpus.Location.ToDirection(Direction.East).ToDirection(Direction.North)];
+            var batEnd = engine.Map[wumpus.Location.ToDirection(Direction.West)];
+            var direction = CavernTests.GetValidDirection(batStart);
+
+            batStart.HasBat = true;
+            batEnd.IsCave = true;
+
+            var randomMock = new Mock<IRandom>();
+            randomMock.SetupSequence(x => x.Next(It.IsAny<uint>()))
+                .Returns((int)wumpus.Location.Row)
+                .Returns((int)wumpus.Location.Column)
+                .Returns((int)batEnd.Location.Row)
+                .Returns((int)batEnd.Location.Column);
+            engine.Random = randomMock.Object;
+
+            engine.SetPlayerLocation(engine.Map[batStart[direction]!.Location].Location, direction);
+            engine.MovePlayer(CavernTests.Opposite(direction));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.GameState, Is.EqualTo(GameState.Eaten));
+                Assert.That(engine.PlayerLocation, Is.EqualTo(wumpus.Location));
+                Assert.That(batStart.HasBat, Is.False);
+                Assert.That(batEnd.HasBat, Is.True);
+            });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<BatMoved>(x =>
+                x.StartLocation.Equals(batStart.Location) &&
+                x.PlayerLocation.Equals(engine.PlayerLocation) &&
+                x.BatLocation.Equals(batEnd.Location) &&
+                x.GameStateChanged == true)));
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<GameStateChanged>(x => x.GameState == GameState.Eaten)));
+        }
+
+        [Test]
+        public void EngineMovePlayerBatDropsOnPit()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, new DifficultyOptions(GameDifficulty.Normal, 1, 100, 0, 0), new RandomHelper());
+
+            ClearWumpus(engine.Map);
+            
+            var batStart = MapTests.GetCavernWhere(engine.Map, c => c.HasBat).Single();
+            var pit = engine.Map[batStart.Location.ToDirection(Direction.North).ToDirection(Direction.East)];
+            var direction = CavernTests.GetValidDirection(batStart);
+            var batEnd = engine.Map[pit.Location.ToDirection(Direction.East)];
+
+            pit.IsCave = pit.IsPit = true;
+            batEnd.IsCave = true;
+
+            var randomMock = new Mock<IRandom>();
+            randomMock.SetupSequence(x => x.Next(It.IsAny<uint>()))
+                .Returns((int)pit.Location.Row)
+                .Returns((int)pit.Location.Column)
+                .Returns((int)batEnd.Location.Row)
+                .Returns((int)batEnd.Location.Column);
+            engine.Random = randomMock.Object;
+
+            engine.SetPlayerLocation(engine.Map[batStart[direction]!.Location].Location, direction);
+            engine.MovePlayer(CavernTests.Opposite(direction));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.GameState, Is.EqualTo(GameState.Pit));
+                Assert.That(engine.PlayerLocation, Is.EqualTo(pit.Location));
+                Assert.That(batStart.HasBat, Is.False);
+                Assert.That(batEnd.HasBat, Is.True);
+            });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<BatMoved>(x =>
+                x.StartLocation.Equals(batStart.Location) &&
+                x.PlayerLocation.Equals(engine.PlayerLocation) &&
+                x.BatLocation.Equals(batEnd.Location) &&
+                x.GameStateChanged == true)));
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<GameStateChanged>(x => x.GameState == GameState.Pit)));
+        }
+
+        [Test]
         public void EngineFireArrowVictory()
         {
-            var engine = new Engine(DifficultyOptionsMinimal, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
             engine.SetPlayerLocation(wumpus[direction]!.Location, direction);
-            engine.FireArrow(CavernTests.Opposite(direction));
+            engine.HandleKeyboardEvent("Space");
+            engine.HandleKeyboardEvent(DirectionToArrowKey(CavernTests.Opposite(direction)));
 
             Assert.That(engine.GameState, Is.EqualTo(GameState.Won));
+        }
+
+        private static string DirectionToArrowKey(Direction direction)
+        {
+            return direction switch
+            {
+                Direction.North => "ArrowUp",
+                Direction.East => "ArrowRight",
+                Direction.South => "ArrowDown",
+                Direction.West => "ArrowLeft",
+                _ => throw new NotImplementedException()
+            };
         }
 
         [Test]
         public void EngineFireArrowMiss()
         {
-            var engine = new Engine(DifficultyOptionsMinimal, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
@@ -431,7 +568,7 @@ namespace WumpusEngineTests
         [Test]
         public void EngineFireArrowMissWall()
         {
-            var engine = new Engine(DifficultyOptionsMinimal, new RandomHelper());
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
             var wumpus = MapTests.GetCavernWhere(engine.Map, c => c.HasWumpus).Single();
             var direction = CavernTests.GetValidDirection(wumpus);
 
@@ -444,39 +581,187 @@ namespace WumpusEngineTests
                 Direction.West => engine.Map[engine.PlayerLocation].West = null,
                 _ => null
             };
-            
+
             engine.FireArrow(direction);
 
             Assert.That(engine.GameState, Is.EqualTo(GameState.Missed));
         }
 
-        private static void MovePlayerHelper(Direction direction, out Cavern startCave, out Cavern endCave)
+        [Test]
+        public void EngineKeyboardRunningArrowUp()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            SetupAllConnectedMap(engine.Map);
+
+            var playerStart = engine.PlayerLocation;
+
+            engine.HandleKeyboardEvent("ArrowUp");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.PlayerLocation, Is.EqualTo(playerStart.ToDirection(Direction.North)));
+                Assert.That(engine.Map[playerStart].PlayerDirection, Is.Null);
+                Assert.That(engine.Map[engine.PlayerLocation].PlayerDirection, Is.EqualTo(Direction.North));
+            });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == engine.Map[playerStart])), Times.Exactly(2));
+        }
+
+        [Test]
+        public void EngineKeyboardRunningArrowRight()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            SetupAllConnectedMap(engine.Map);
+
+            var playerStart = engine.PlayerLocation;
+
+            engine.HandleKeyboardEvent("ArrowRight");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.PlayerLocation, Is.EqualTo(playerStart.ToDirection(Direction.East)));
+                Assert.That(engine.Map[playerStart].PlayerDirection, Is.Null);
+                Assert.That(engine.Map[engine.PlayerLocation].PlayerDirection, Is.EqualTo(Direction.East));
+            });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == engine.Map[playerStart])), Times.Exactly(2));
+        }
+
+        [Test]
+        public void EngineKeyboardRunningArrowDown()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            SetupAllConnectedMap(engine.Map);
+
+            var playerStart = engine.PlayerLocation;
+
+            engine.HandleKeyboardEvent("ArrowDown");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.PlayerLocation, Is.EqualTo(playerStart.ToDirection(Direction.South)));
+                Assert.That(engine.Map[playerStart].PlayerDirection, Is.Null);
+                Assert.That(engine.Map[engine.PlayerLocation].PlayerDirection, Is.EqualTo(Direction.South));
+            });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == engine.Map[playerStart])), Times.Exactly(2));
+        }
+
+        [Test]
+        public void EngineKeyboardRunningArrowLeft()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            SetupAllConnectedMap(engine.Map);
+
+            var playerStart = engine.PlayerLocation;
+
+            engine.HandleKeyboardEvent("ArrowLeft");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(engine.PlayerLocation, Is.EqualTo(playerStart.ToDirection(Direction.West)));
+                Assert.That(engine.Map[playerStart].PlayerDirection, Is.Null);
+                Assert.That(engine.Map[engine.PlayerLocation].PlayerDirection, Is.EqualTo(Direction.West));
+            });
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.Is<CavernUpdated>(e => e.Cavern == engine.Map[playerStart])), Times.Exactly(2));
+        }
+
+        [Test]
+        public void EngineKeyboardRunningIgnoredKey()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            engine.HandleKeyboardEvent("A");
+
+            _eventAggregatorMock.Verify(x => x.Publish(It.IsAny<CavernUpdated>()), Times.Once);
+        }
+
+        [Test]
+        public void EngineKeyboardRunningToFireMode()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            engine.HandleKeyboardEvent("Space");
+
+            Assert.That(engine.GameState, Is.EqualTo(GameState.Firing));
+            _eventAggregatorMock.Verify(x => x.Publish(It.IsAny<GameStateChanged>()), Times.Exactly(2));
+        }
+
+        [Test]
+        public void EngineKeyboardFireModeToRunning()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            engine.SetGameState(GameState.Firing);
+            engine.HandleKeyboardEvent("Space");
+
+            Assert.That(engine.GameState, Is.EqualTo(GameState.Running));
+            _eventAggregatorMock.Verify(x => x.Publish(It.IsAny<GameStateChanged>()), Times.Exactly(2));
+        }
+
+        [Test]
+        public void EngineKeyboardGameStateUnchanged()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            engine.SetGameState(GameState.Pit);
+            engine.HandleKeyboardEvent("Space");
+
+            Assert.That(engine.GameState, Is.EqualTo(GameState.Pit));
+            _eventAggregatorMock.Verify(x => x.Publish(It.IsAny<GameStateChanged>()), Times.Once);
+        }
+
+        [Test]
+        public void EngineKeyboardFireMode()
+        {
+            var engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper());
+            ClearWumpus(engine.Map);
+            engine.SetGameState(GameState.Firing);
+            engine.HandleKeyboardEvent("ArrowUp");
+
+            Assert.That(engine.GameState, Is.EqualTo(GameState.Missed));
+            _eventAggregatorMock.Verify(x => x.Publish(It.IsAny<GameStateChanged>()), Times.Exactly(2));
+        }
+
+        private static void SetupAllConnectedMap(Map map)
+        {
+            ClearWumpus(map);
+
+            foreach (var cavern in map.Caverns)
+            {
+                cavern.North = map[cavern.Location.ToDirection(Direction.North)];
+                cavern.East = map[cavern.Location.ToDirection(Direction.East)];
+                cavern.South = map[cavern.Location.ToDirection(Direction.South)];
+                cavern.West = map[cavern.Location.ToDirection(Direction.West)];
+            }
+        }
+
+        private void MovePlayerHelper(Direction direction, out Cavern startCave, out Cavern endCave)
         {
             Engine engine = null!;
             Cavern? startCavern = null;
 
             while (startCavern == null)
             {
-                engine = new Engine(DifficultyOptionsMinimal, new RandomHelper());
-                startCavern = MapTests.GetCavernWhere(engine.Map, c => c[direction] != null && (c.IsCave || c.NumExits < 4)).FirstOrDefault();
+                engine = new Engine(_eventAggregatorMock.Object, DifficultyOptionsMinimal, new RandomHelper(1900588753));
+                startCavern = MapTests.GetCavernWhere(engine.Map, c => c[direction] != null && !c.Location.Equals(engine.PlayerLocation)).FirstOrDefault();
             }
 
             ClearWumpus(engine.Map);
             engine.SetPlayerLocation(startCavern.Location, direction);
+
+            _eventAggregatorMock.Reset();
             engine.MovePlayer(direction);
 
             startCave = startCavern;
             endCave = engine.Map[engine.PlayerLocation];
         }
 
-        private static void MovePlayer4WayTunnelHelper(Direction lastDirection, Direction toDirection, out Cavern startCave, out Cavern endCave)
+        private void MovePlayer4WayTunnelHelper(Direction lastDirection, Direction toDirection, out Cavern startCave, out Cavern endCave)
         {
             Engine engine = null!;
             Cavern? startCavern = null;
 
             while (startCavern == null)
             {
-                engine = new Engine(DifficultyOptions.Hard, new RandomHelper());
+                engine = new Engine(_eventAggregatorMock.Object, DifficultyOptions.Hard, new RandomHelper());
                 startCavern = MapTests.GetCavernWhere(engine.Map, c => !c.IsCave && c.NumExits == 4).FirstOrDefault();
             }
 

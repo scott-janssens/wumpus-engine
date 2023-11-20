@@ -1,6 +1,8 @@
-﻿namespace WumpusEngine;
+﻿using CommunityToolkit.Diagnostics;
 
-public enum GameDifficulty
+namespace WumpusEngine;
+
+public enum GameDifficulty : uint
 {
     Easy = 0,
     Normal,
@@ -26,5 +28,14 @@ public class DifficultyOptions
         BatCarryPct = batCarryPct;
         MaxTunnels = maxTunnels;
         NumPits = numPits;
+    }
+
+    public void Validate()
+    {
+        Guard.IsInRange((uint)Difficulty, 0, (uint)GameDifficulty.Hard + 1);
+        Guard.IsInRange(BatCount, 0, 3);
+        Guard.IsInRange(BatCarryPct, 0, 101);
+        Guard.IsInRange(MaxTunnels, 0, 25);
+        Guard.IsInRange(NumPits, 0, 4);
     }
 }

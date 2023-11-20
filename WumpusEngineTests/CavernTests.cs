@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Lea;
+using Moq;
+using System.Diagnostics.CodeAnalysis;
 using WumpusEngine;
 
 namespace WumpusEngineTests
@@ -9,11 +11,18 @@ namespace WumpusEngineTests
         private const int Row = 2;
         private const int Column = 4;
         private static readonly Location Location = new(Row, Column);
+        private Mock<IEventAggregator> _eventAggregatorMock;
+
+        [SetUp]
+        public void Setup()
+        {
+            _eventAggregatorMock = new Mock<IEventAggregator>();
+        }
 
         [Test]
         public void CavernCtor()
         {
-            var actual = new Cavern(Location);
+            var actual = new Cavern(_eventAggregatorMock.Object, Location);
 
             Assert.Multiple(() =>
             {
@@ -37,7 +46,7 @@ namespace WumpusEngineTests
         [Test]
         public void CavernSetProps()
         {
-            var actual = new Cavern(Location)
+            var actual = new Cavern(_eventAggregatorMock.Object, Location)
             {
                 IsCave = false,
                 IsPit = true,
@@ -60,7 +69,7 @@ namespace WumpusEngineTests
         [Test]
         public void CavernReveal()
         {
-            var actual = new Cavern(Location);
+            var actual = new Cavern(_eventAggregatorMock.Object, Location);
             actual.Reveal();
 
             Assert.That(actual.IsRevealed, Is.True);
@@ -69,11 +78,11 @@ namespace WumpusEngineTests
         [Test]
         public void CavernIndexer()
         {
-            var adjacentNorth = new Cavern(Location);
-            var adjacentEast = new Cavern(Location);
-            var adjacentSouth = new Cavern(Location);
-            var adjacentWest = new Cavern(Location);
-            var actual = new Cavern(Location);
+            var adjacentNorth = new Cavern(_eventAggregatorMock.Object, Location);
+            var adjacentEast = new Cavern(_eventAggregatorMock.Object, Location);
+            var adjacentSouth = new Cavern(_eventAggregatorMock.Object, Location);
+            var adjacentWest = new Cavern(_eventAggregatorMock.Object, Location);
+            var actual = new Cavern(_eventAggregatorMock.Object, Location);
 
             actual[Direction.North] = adjacentNorth;
             Assert.Multiple(() =>
@@ -111,7 +120,7 @@ namespace WumpusEngineTests
         [Test]
         public void CavernIndexerSetNull()
         {
-            var actual = new Cavern(Location);
+            var actual = new Cavern(_eventAggregatorMock.Object, Location);
 
             Assert.Throws<ArgumentNullException>(() => actual[Direction.North] = null);
         }
@@ -119,7 +128,7 @@ namespace WumpusEngineTests
         [Test]
         public void CavernIndexerGetNull()
         {
-            var actual = new Cavern(Location);
+            var actual = new Cavern(_eventAggregatorMock.Object, Location);
 
             Assert.Throws<ArgumentOutOfRangeException>(() => _ = actual[(Direction)42], "Invalid Direction value 42");
         }

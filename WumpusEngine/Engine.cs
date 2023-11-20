@@ -1,30 +1,53 @@
-﻿namespace WumpusEngine;
+﻿using CommunityToolkit.Diagnostics;
+using Lea;
+using WumpusEngine.Events;
+
+namespace WumpusEngine;
 
 public class Engine
 {
-    private Direction _lastDirection = Direction.West;
+    private readonly IEventAggregator _eventAggregator;
     private IRandom _random = null!;
+    private Direction _lastDirection = Direction.West;
 
     public Map Map { get; private set; } = null!;
     public Location PlayerLocation { get; private set; } = null!;
-    public GameState GameState { get; private set; }
 
-    public Engine(DifficultyOptions difficultyOptions, IRandom random)
+    private GameState _gameState;
+    public GameState GameState 
     {
+        get => _gameState;
+        private set
+        {
+            if (_gameState != value)
+            {
+                _gameState = value;
+                _eventAggregator.Publish(new GameStateChanged(value));
+            }
+        }
+    }
+
+    public Engine(IEventAggregator eventAggregator, DifficultyOptions difficultyOptions, IRandom random)
+    {
+        _eventAggregator = eventAggregator;
         StartNewGame(difficultyOptions, random);
     }
 
     public void StartNewGame(DifficultyOptions difficultyOptions, IRandom random)
     {
+        Guard.IsNotNull(difficultyOptions);
+        Guard.IsNotNull(random);
+        difficultyOptions.Validate();
+
         _random = random;
-        Map = new Map(difficultyOptions, random);
+        Map = new Map(_eventAggregator, difficultyOptions, random);
 
         while (PlayerLocation == null)
         {
             var loc = GetRandomLocation();
             var cavern = Map[loc];
 
-            if (cavern.IsCave && !cavern.IsPit && !cavern.HasWumpus)
+            if (cavern.IsCave && !cavern.IsPit && !cavern.HasWumpus && !cavern.HasBat)
             {
                 SetPlayerLocation(loc, Direction.West);
                 cavern.Reveal();
@@ -34,6 +57,48 @@ public class Engine
         GameState = GameState.Running;
     }
 
+    public void HandleKeyboardEvent(string key)
+    {
+        Direction direction;
+
+        switch (key)
+        {
+            case "ArrowUp":
+                direction = Direction.North;
+                break;
+            case "ArrowRight":
+                direction = Direction.East;
+                break;
+            case "ArrowDown":
+                direction = Direction.South;
+                break;
+            case "ArrowLeft":
+                direction = Direction.West;
+                break;
+            case "Space":
+                TriggerFireMode();
+                return;
+            default:
+                return;
+        }
+
+        if (GameState == GameState.Running)
+        {
+            MovePlayer(direction);
+        }
+        else if (GameState == GameState.Firing)
+        {
+            FireArrow(direction);
+        }
+    }
+
+    private void TriggerFireMode() =>
+        GameState = GameState == GameState.Running
+                    ? GameState.Firing
+                    : GameState == GameState.Firing
+                        ? GameState.Running
+                        : GameState;
+
     public void FireArrow(Direction direction)
     {
         EndGame(Map[PlayerLocation][direction]?.HasWumpus ?? false ? GameState.Won : GameState.Missed);
@@ -41,11 +106,6 @@ public class Engine
 
     public void MovePlayer(Direction direction)
     {
-        if (direction > Direction.West)
-        {
-            throw new ArgumentOutOfRangeException(nameof(direction));
-        }
-
         if (GameState != GameState.Running)
         {
             return;
@@ -108,16 +168,12 @@ public class Engine
                 newPlayerLocation = GetRandomLocation();
             }
 
-            //var startLocation = newCavern.Location;
-            //var batLocation = GetRandomLocation();
-
             newCavern.HasBat = false;
 
-            //var droppedCavern = Map[newPlayerLocation];
+            var newBatLocation = Map.SetRandomBatLocation().Location;
+            var droppedCavern = Map[newPlayerLocation];
 
-            Map.SetRandomBatLocation();
-
-            // TODO: Add some sort of notify here
+            _eventAggregator.Publish(new BatMoved(newCavern.Location, newPlayerLocation, newBatLocation, droppedCavern.HasWumpus || droppedCavern.IsPit));
 
             SetPlayerLocation(newPlayerLocation, direction);
         }
@@ -153,9 +209,11 @@ public class Engine
 #if DEBUG
     internal IRandom Random
     {
-        set => _random = value;
+        set => _random = Map.Random = value;
     }
 
     internal void SetLastDirection(Direction direction) => _lastDirection = direction;
+
+    internal void SetGameState(GameState state) => _gameState = state;
 #endif
 }

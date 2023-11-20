@@ -1,8 +1,10 @@
-﻿namespace WumpusEngine;
+﻿using Lea;
+
+namespace WumpusEngine;
 
 public class Map
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "<Pending>")]
+    private readonly IEventAggregator _eventAggregator;
     private IRandom _random;
 
     public const uint MapWidth = 8;
@@ -12,8 +14,9 @@ public class Map
 
     public DifficultyOptions DifficultyOptions { get; }
 
-    public Map(DifficultyOptions difficultyOptions, IRandom? random = null)
+    public Map(IEventAggregator eventAggregator, DifficultyOptions difficultyOptions, IRandom? random = null)
     {
+        _eventAggregator = eventAggregator;
         DifficultyOptions = difficultyOptions;
         _random = random ?? new RandomHelper();
 
@@ -53,7 +56,7 @@ public class Map
         {
             for (uint c = 0; c < MapWidth; c++)
             {
-                Caverns[r, c] = new Cavern(new Location(r, c));
+                Caverns[r, c] = new Cavern(_eventAggregator, new Location(r, c));
             }
         }
 

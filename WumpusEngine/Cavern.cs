@@ -1,7 +1,12 @@
-﻿namespace WumpusEngine;
+﻿using Lea;
+using WumpusEngine.Events;
+
+namespace WumpusEngine;
 
 public class Cavern
 {
+    private readonly IEventAggregator _eventAggregator;
+
     public Cavern? North { get; internal set; }
     public Cavern? East { get; internal set; }
     public Cavern? South { get; internal set; }
@@ -31,21 +36,37 @@ public class Cavern
 
     public bool IsRevealed { get; private set; } = false;
 
+    private Direction? _direction;
     /// <summary>
     /// If the player is in this cavern, the direction the player moved into this cavern, otherwise null.
     /// </summary>
-    public Direction? PlayerDirection { get; internal set; }
+    public Direction? PlayerDirection
+    {
+        get => _direction;
+        internal set
+        {
+            if (_direction != value)
+            {
+                _direction = value;
+                _eventAggregator.Publish(new CavernUpdated(this));
+            }
+        }
+    }
 
     public Location Location { get; }
 
-    public Cavern(Location location)
+    public Cavern(IEventAggregator eventAggregaor, Location location)
     {
+        _eventAggregator = eventAggregaor;
         Location = location;
     }
 
     public void Reveal()
     {
-        IsRevealed = true;
+        if (!IsRevealed)
+        {
+            IsRevealed = true;
+        }
     }
 
     public Cavern? this[Direction direction]

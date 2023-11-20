@@ -18,6 +18,7 @@ public class RandomHelper : IRandom
         {
 #if DEBUG
             Console.WriteLine($"RandomHelper Seed set to {value}");
+            Console.Out.Flush();
 #endif
             _seed = value;
             _random = new Random(_seed);
