@@ -9,20 +9,46 @@ public class Engine
     private readonly IEventAggregator _eventAggregator;
     private IRandom _random = null!;
     private Direction _lastDirection = Direction.West;
+    private BatMoved? _lastBatMoved; // The BatMoved event if the bat carried the player this turn. Resets every turn.
 
+    /// <summary>
+    /// The Map object of the current game.
+    /// </summary>
     public Map Map { get; private set; } = null!;
+
+    /// <summary>
+    /// The location of the player.
+    /// </summary>
     public Location PlayerLocation { get; private set; } = null!;
 
+    /// <summary>
+    /// The Game Over message when the game reaches and end state.
+    /// </summary>
+    public string EndGameMessage { get; private set; } = string.Empty;
+
+    private readonly Messages _messages;
+
     private GameState _gameState;
-    public GameState GameState 
+
+    /// <summary>
+    /// The current state of the game.
+    /// </summary>
+    public GameState GameState
     {
         get => _gameState;
         private set
         {
             if (_gameState != value)
             {
+                var oldGameState = _gameState;
+
+                if (value == GameState.Running)
+                {
+                    EndGameMessage = string.Empty;
+                }
+
                 _gameState = value;
-                _eventAggregator.Publish(new GameStateChanged(value));
+                _eventAggregator.Publish(new GameStateChanged(oldGameState, value));
             }
         }
     }
@@ -30,7 +56,13 @@ public class Engine
     public Engine(IEventAggregator eventAggregator, DifficultyOptions difficultyOptions, IRandom random)
     {
         _eventAggregator = eventAggregator;
+        _messages = new Messages(random);
         StartNewGame(difficultyOptions, random);
+    }
+
+    public void StartNewGame()
+    {
+        StartNewGame(Map.DifficultyOptions, new RandomHelper());
     }
 
     public void StartNewGame(DifficultyOptions difficultyOptions, IRandom random)
@@ -40,8 +72,10 @@ public class Engine
         difficultyOptions.Validate();
 
         _random = random;
+        _lastBatMoved = null;
         Map = new Map(_eventAggregator, difficultyOptions, random);
 
+        PlayerLocation = null!;
         while (PlayerLocation == null)
         {
             var loc = GetRandomLocation();
@@ -50,16 +84,19 @@ public class Engine
             if (cavern.IsCave && !cavern.IsPit && !cavern.HasWumpus && !cavern.HasBat)
             {
                 SetPlayerLocation(loc, Direction.West);
-                cavern.Reveal();
             }
         }
 
         GameState = GameState.Running;
+
+        _eventAggregator.Publish(new NewGameStarted());
     }
 
     public void HandleKeyboardEvent(string key)
     {
         Direction direction;
+
+        _lastBatMoved = null;
 
         switch (key)
         {
@@ -75,8 +112,14 @@ public class Engine
             case "ArrowLeft":
                 direction = Direction.West;
                 break;
-            case "Space":
+            case " ":
                 TriggerFireMode();
+                return;
+            case "Escape":
+                if (GameState == GameState.Firing)
+                {
+                    TriggerFireMode();
+                }
                 return;
             default:
                 return;
@@ -92,7 +135,7 @@ public class Engine
         }
     }
 
-    private void TriggerFireMode() =>
+    public void TriggerFireMode() =>
         GameState = GameState == GameState.Running
                     ? GameState.Firing
                     : GameState == GameState.Firing
@@ -101,6 +144,7 @@ public class Engine
 
     public void FireArrow(Direction direction)
     {
+        _lastDirection = direction;
         EndGame(Map[PlayerLocation][direction]?.HasWumpus ?? false ? GameState.Won : GameState.Missed);
     }
 
@@ -157,7 +201,6 @@ public class Engine
         PlayerLocation = location;
         var newCavern = Map[PlayerLocation];
         newCavern.PlayerDirection = direction;
-        newCavern.Reveal();
 
         if (newCavern.HasBat && (newCavern.HasWumpus || newCavern.IsPit || Map.DifficultyOptions.BatCarryPct > _random.Next(100)))
         {
@@ -173,7 +216,8 @@ public class Engine
             var newBatLocation = Map.SetRandomBatLocation().Location;
             var droppedCavern = Map[newPlayerLocation];
 
-            _eventAggregator.Publish(new BatMoved(newCavern.Location, newPlayerLocation, newBatLocation, droppedCavern.HasWumpus || droppedCavern.IsPit));
+            _lastBatMoved = new BatMoved(newCavern.Location, newPlayerLocation, newBatLocation, droppedCavern.HasWumpus || droppedCavern.IsPit);
+            _eventAggregator.Publish(_lastBatMoved);
 
             SetPlayerLocation(newPlayerLocation, direction);
         }
@@ -194,7 +238,17 @@ public class Engine
 
     public void EndGame(GameState result)
     {
+        EndGameMessage = result switch
+        {
+            GameState.Missed => _messages.GetMissedDescription(Map[PlayerLocation], _lastDirection),
+            GameState.Pit => _messages.GetPitDescription(_lastBatMoved != null),
+            GameState.Eaten => _messages.GetEatenDescription(_lastBatMoved != null),
+            GameState.Won => _messages.GetVictoryDescription(),
+            _ => string.Empty
+        };
+
         GameState = result;
+
         RevealAll();
     }
 
@@ -209,6 +263,7 @@ public class Engine
 #if DEBUG
     internal IRandom Random
     {
+        get => _random;
         set => _random = Map.Random = value;
     }
 

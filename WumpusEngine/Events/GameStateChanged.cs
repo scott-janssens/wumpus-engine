@@ -4,10 +4,13 @@ namespace WumpusEngine.Events;
 
 public class GameStateChanged : IEvent
 {
-    public GameState GameState { get; }
+    public GameState OldGameState { get; }
 
-    public GameStateChanged(GameState gameState)
+    public GameState NewGameState { get; }
+
+    public GameStateChanged(GameState old, GameState @new)
     {
-        GameState = gameState;
+        OldGameState = old;
+        NewGameState = @new;
     }
 }

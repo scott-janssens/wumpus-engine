@@ -7,10 +7,10 @@ public class Cavern
 {
     private readonly IEventAggregator _eventAggregator;
 
-    public Cavern? North { get; internal set; }
-    public Cavern? East { get; internal set; }
-    public Cavern? South { get; internal set; }
-    public Cavern? West { get; internal set; }
+    public Cavern? North { get; set; }
+    public Cavern? East { get; set; }
+    public Cavern? South { get; set; }
+    public Cavern? West { get; set; }
 
     public int NumExits
     {
@@ -27,12 +27,25 @@ public class Cavern
         }
     }
 
-    public bool IsCave { get; internal set; } = true;
-    public bool IsPit { get; internal set; } = false;
-    public bool IsAdjacentPit { get; internal set; } = false;
-    public bool HasBlood { get; internal set; } = false;
-    public bool HasBat { get; internal set; } = false;
-    public bool HasWumpus { get; internal set; } = false;
+    public bool IsCave { get; set; } = true;
+    public bool IsPit { get; set; } = false;
+    public bool IsAdjacentPit { get; set; } = false;
+    public bool HasBlood { get; set; } = false;
+    public bool HasWumpus { get; set; } = false;
+
+    private bool _hasBat = false;
+    public bool HasBat
+    {
+        get => _hasBat;
+        internal set
+        {
+            _hasBat = value;
+            if (value)
+            {
+                _eventAggregator.Publish(new CavernUpdated(this));
+            }
+        }
+    }
 
     public bool IsRevealed { get; private set; } = false;
 
@@ -48,6 +61,7 @@ public class Cavern
             if (_direction != value)
             {
                 _direction = value;
+                IsRevealed = true;
                 _eventAggregator.Publish(new CavernUpdated(this));
             }
         }
@@ -66,6 +80,7 @@ public class Cavern
         if (!IsRevealed)
         {
             IsRevealed = true;
+            _eventAggregator.Publish(new CavernUpdated(this));
         }
     }
 

@@ -18,7 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lea" Version="1.0.0" />
+    <PackageReference Include="CommunityToolkit.Diagnostics" Version="8.2.2" />
+    <PackageReference Include="Lea" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -38,4 +38,15 @@ public class DifficultyOptions
         Guard.IsInRange(MaxTunnels, 0, 25);
         Guard.IsInRange(NumPits, 0, 4);
     }
+
+    public static DifficultyOptions FromGameDifficulty(GameDifficulty difficulty)
+    {
+        return difficulty switch
+        {
+            GameDifficulty.Easy => Easy,
+            GameDifficulty.Normal => Normal,
+            GameDifficulty.Hard => Hard,
+            _ => throw new ArgumentOutOfRangeException(nameof(difficulty))
+        };
+    }
 }

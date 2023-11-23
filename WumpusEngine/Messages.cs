@@ -14,7 +14,7 @@ public class Messages
 
     public static string GetMealDescription()
     {
-        var hour = new DateTime().Hour;
+        var hour = DateTime.Now.Hour;
 
         if (hour < 1)
         {
@@ -48,8 +48,13 @@ public class Messages
         return " a snack.";
     }
 
-    public string GetEatenDescription()
+    public string GetEatenDescription(bool batDropped)
     {
+        if (batDropped)
+        {
+            return $"You have encountered a bat who picks you up and drops you next to the fearsome Wumpus. You are devoured for {Messages.GetMealDescription()}";
+        }
+
         return _random.Next(4) switch
         {
             0 => "You see the fearsome Wumpus, but before you can draw your bow, you are devoured for" + GetMealDescription(),
@@ -59,8 +64,13 @@ public class Messages
         };
     }
 
-    public string GetPitDescription()
+    public string GetPitDescription(bool batDropped)
     {
+        if (batDropped)
+        {
+            return "You have encountered a bat who picks you up and drops you into a bottomless pit.";
+        }
+
         return _random.Next(3) switch
         {
             0 => "You have fallen into a bottomless pit. At least you don't have the fearsome Wumpus to worry about anymore.",
@@ -71,7 +81,7 @@ public class Messages
 
     public string GetMissedDescription(Cavern cavern, Direction direction)
     {
-        var noise = "he noise attracts the Wumpus and you are devoured for" + GetMealDescription();
+        var noise = "he noise attracts the fearsome Wumpus and you are devoured for" + GetMealDescription();
 
         if (cavern[direction] == null)
         {

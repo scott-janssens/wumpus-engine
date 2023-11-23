@@ -259,28 +259,19 @@ public class Map
 
         // make sure the starting cell isn't a tunnel with 4 exits which would require special code
         var startCavern = Caverns.Cast<Cavern>().First(x => x.IsCave);
+        var cavernsTraversed = new HashSet<Cavern>();
 
-        CaveTrace(startCavern, lastDirection);
+        CaveTrace(startCavern, lastDirection, cavernsTraversed);
 
-        foreach (var cavern in Caverns)
-        {
-            if (!cavern.HasBat)
-            {
-                ResetBats();
-                return false;
-            }
-        }
-
-        ResetBats();
-        return true;
+        return cavernsTraversed.Count == Map.MapWidth * Map.MapHeight;
     }
 
-    private void CaveTrace(Cavern cavern, Stack<Direction> lastDirection)
+    private void CaveTrace(Cavern cavern, Stack<Direction> lastDirection, HashSet<Cavern> traversed)
     {
-        if (cavern.HasBat)
+        if (traversed.Contains(cavern))
             return;
 
-        cavern.HasBat = true;
+        traversed.Add(cavern);
 
         if (!cavern.IsCave && cavern.NumExits == 4)
         {
@@ -289,19 +280,19 @@ public class Map
             {
                 case Direction.North:
                     lastDirection.Push(Direction.East);
-                    CaveTrace(cavern.West!, lastDirection);
+                    CaveTrace(cavern.West!, lastDirection, traversed);
                     break;
                 case Direction.East:
                     lastDirection.Push(Direction.North);
-                    CaveTrace(cavern.South!, lastDirection);
+                    CaveTrace(cavern.South!, lastDirection, traversed);
                     break;
                 case Direction.South:
                     lastDirection.Push(Direction.West);
-                    CaveTrace(cavern.East!, lastDirection);
+                    CaveTrace(cavern.East!, lastDirection, traversed);
                     break;
                 case Direction.West:
                     lastDirection.Push(Direction.South);
-                    CaveTrace(cavern.North!, lastDirection);
+                    CaveTrace(cavern.North!, lastDirection, traversed);
                     break;
             }
         }
@@ -310,25 +301,25 @@ public class Map
             if (cavern.North != null)
             {
                 lastDirection.Push(Direction.South);
-                CaveTrace(cavern.North, lastDirection);
+                CaveTrace(cavern.North, lastDirection, traversed);
             }
 
             if (cavern.East != null)
             {
                 lastDirection.Push(Direction.West);
-                CaveTrace(cavern.East, lastDirection);
+                CaveTrace(cavern.East, lastDirection, traversed);
             }
 
             if (cavern.South != null)
             {
                 lastDirection.Push(Direction.North);
-                CaveTrace(cavern.South, lastDirection);
+                CaveTrace(cavern.South, lastDirection, traversed);
             }
 
             if (cavern.West != null)
             {
                 lastDirection.Push(Direction.East);
-                CaveTrace(cavern.West, lastDirection);
+                CaveTrace(cavern.West, lastDirection, traversed);
             }
         }
 
