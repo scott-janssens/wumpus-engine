@@ -771,7 +771,7 @@ namespace WumpusEngineTests
             _eventAggregatorMock.Verify(x => x.Publish(It.IsAny<GameStateChanged>()), Times.Exactly(2));
         }
 
-        private static void SetupAllConnectedMap(Map map)
+        private static void SetupAllConnectedMap(WumpusMap map)
         {
             ClearWumpus(map);
 
@@ -825,7 +825,7 @@ namespace WumpusEngineTests
             endCave = engine.Map[engine.PlayerLocation];
         }
 
-        private static void ClearWumpus(Map map)
+        private static void ClearWumpus(WumpusMap map)
         {
             map.Caverns.Cast<Cavern>().ToList().ForEach(c => c.HasWumpus = false);
         }

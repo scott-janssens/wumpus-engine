@@ -12,8 +12,8 @@ public class Location
 
     public Location(uint row, uint column)
     {
-        if (row >= Map.MapHeight) throw new ArgumentOutOfRangeException(nameof(row), $"row is out of range (max of {Map.MapHeight})");
-        if (column >= Map.MapWidth) throw new ArgumentOutOfRangeException(nameof(column), $"column is out of range (max of {Map.MapWidth})");
+        if (row >= WumpusMap.MapHeight) throw new ArgumentOutOfRangeException(nameof(row), $"row is out of range (max of {WumpusMap.MapHeight})");
+        if (column >= WumpusMap.MapWidth) throw new ArgumentOutOfRangeException(nameof(column), $"column is out of range (max of {WumpusMap.MapWidth})");
 
         Row = row;
         Column = column;
@@ -23,10 +23,10 @@ public class Location
     {
         return direction switch
         {
-            Direction.North => new Location((Row == 0) ? Map.MapHeight - 1 : Row - 1, Column),
-            Direction.East => new Location(Row, (Column == Map.MapWidth - 1) ? 0 : Column + 1),
-            Direction.South => new Location((Row == Map.MapHeight - 1) ? 0 : Row + 1, Column),
-            Direction.West => new Location(Row, (Column == 0) ? Map.MapWidth - 1 : Column - 1),
+            Direction.North => new Location((Row == 0) ? WumpusMap.MapHeight - 1 : Row - 1, Column),
+            Direction.East => new Location(Row, (Column == WumpusMap.MapWidth - 1) ? 0 : Column + 1),
+            Direction.South => new Location((Row == WumpusMap.MapHeight - 1) ? 0 : Row + 1, Column),
+            Direction.West => new Location(Row, (Column == 0) ? WumpusMap.MapWidth - 1 : Column - 1),
             _ => throw new ArgumentOutOfRangeException(nameof(direction), $"Invalid Direction value {direction}")
         };
     }
@@ -45,6 +45,6 @@ public class Location
 
     public override int GetHashCode()
     {
-        return (int)(Row * Map.MapWidth + Column); 
+        return (int)(Row * WumpusMap.MapWidth + Column); 
     }
 }

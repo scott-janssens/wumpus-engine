@@ -2,7 +2,7 @@
 
 namespace WumpusEngine;
 
-public class Map
+public class WumpusMap
 {
     private readonly IEventAggregator _eventAggregator;
     private IRandom _random;
@@ -14,7 +14,7 @@ public class Map
 
     public DifficultyOptions DifficultyOptions { get; }
 
-    public Map(IEventAggregator eventAggregator, DifficultyOptions difficultyOptions, IRandom? random = null)
+    public WumpusMap(IEventAggregator eventAggregator, DifficultyOptions difficultyOptions, IRandom? random = null)
     {
         _eventAggregator = eventAggregator;
         DifficultyOptions = difficultyOptions;
@@ -179,8 +179,126 @@ public class Map
         return true;
     }
 
-    // Returns the cavern object 1 cell in the specified direction
-    private Cavern GetAdjacentCell(Cavern cavern, Direction direction) => this[cavern.Location.ToDirection(direction)];
+    /// <summary>
+    /// Returns the cavern object 1 cell in the specified direction 
+    /// </summary>
+    public Cavern GetAdjacentCell(Cavern cavern, Direction direction) => this[cavern.Location.ToDirection(direction)];
+
+    /// <summary>
+    /// Returns a list of Cavern objects that are a route from the starting cavern to the specified location.
+    /// </summary>
+    public IList<Cavern> TraverseToCell(Cavern start, Location end, bool revealed)
+    {
+        var route = new Stack<Cavern>();
+
+        ClearTraverseTags();
+        Traverse(start, end, null, route, revealed);
+
+        return route.ToList();
+    }
+
+    private void ClearTraverseTags()
+    {
+        foreach (var cavern in Caverns)
+        {
+            cavern.TraverseTag = false;
+            cavern.TunnelTag2 = false;
+        }
+    }
+
+    private bool Traverse(Cavern cavern, Location end, Direction? entrance, Stack<Cavern> route, bool revealed)
+    {
+        Cavern? adjacent;
+
+        if (cavern.Location.Equals(end))
+        {
+            return true;
+        }
+
+        if (cavern.TraverseTag || (revealed && !cavern.IsRevealed)) return false;
+
+        if (cavern.IsCave)
+        {
+            foreach (var direction in Directions.All)
+            {
+                adjacent = cavern[direction];
+                if (adjacent != null)
+                {
+                    cavern.TraverseTag = true;
+                    if (Traverse(adjacent, end, Directions.Opposite(direction), route, revealed))
+                    {
+                        route.Push(adjacent);
+                        return true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (cavern.NumExits == 4)
+            {
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
+                var direction = entrance switch
+                {
+                    Direction.North => Direction.West,
+                    Direction.East => Direction.South,
+                    Direction.South => Direction.East,
+                    Direction.West => Direction.North,
+                    null => Direction.North
+                };
+#pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
+
+                if (direction == Direction.North || direction == Direction.West)
+                {
+                    if (cavern.TraverseTag)
+                    {
+                        return false;
+                    }
+
+                    cavern.TraverseTag = true;
+                }
+                else
+                {
+                    if (cavern.TunnelTag2)
+                    {
+                        return false;
+                    }
+
+                    cavern.TunnelTag2 = true;
+                }
+
+                adjacent = GetAdjacentCell(cavern, direction);
+
+                if (Traverse(adjacent, end, Directions.Opposite(direction), route, revealed))
+                {
+                    route.Push(adjacent);
+                    return true;
+                }
+            }
+            else
+            {
+                cavern.TraverseTag = true;
+                foreach (var direction in Directions.All)
+                {
+                    if (direction == entrance)
+                    {
+                        continue;
+                    }
+
+                    if ((adjacent = cavern[direction]) != null)
+                    {
+                        if (Traverse(adjacent, end, Directions.Opposite(direction), route, revealed))
+                        {
+                            route.Push(adjacent);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
 
     // Returns the first cavern object where IsCave is true in the specified direction from the specified cavern.
     // If no exit exists in that direction, null is returned.
@@ -263,7 +381,7 @@ public class Map
 
         CaveTrace(startCavern, lastDirection, cavernsTraversed);
 
-        return cavernsTraversed.Count == Map.MapWidth * Map.MapHeight;
+        return cavernsTraversed.Count == WumpusMap.MapWidth * WumpusMap.MapHeight;
     }
 
     private void CaveTrace(Cavern cavern, Stack<Direction> lastDirection, HashSet<Cavern> traversed)
@@ -332,6 +450,39 @@ public class Map
         {
             cavern.HasBat = false;
         }
+    }
+
+    public static bool IsAdjacent(Location location1, Location location2)
+    {
+        var deltaRow = Math.Abs((int)location1.Row - location2.Row);
+        var deltaColumn = Math.Abs((int)location1.Column - location2.Column);
+
+        return deltaRow + deltaColumn == 1 || 
+            (deltaRow + deltaColumn == 5 && deltaColumn == 0) ||
+            (deltaRow + deltaColumn == 7 && deltaColumn == 7);
+    }
+
+    /// <summary>
+    /// Returns Direction value to move from the start location to the end location. The locations must be adjacent and
+    /// must be traversable.
+    /// </summary>
+    public Direction? GetDirection(Location start, Location end)
+    {
+        if (IsAdjacent(start, end))
+        {
+            if (start.Column != end.Column)
+            {
+                return (int)start.Column - end.Column == -1 || (start.Column == 7) 
+                    ? this[start].East != null ? Direction.East : null
+                    : this[start].West != null ? Direction.West : null;
+            }
+
+            return (int)start.Row - end.Row == -1 || (start.Row == 5)
+                ? this[start].South != null ? Direction.South : null
+                : this[start].North != null ? Direction.North : null;
+        }
+
+        return null;
     }
 
 #if DEBUG

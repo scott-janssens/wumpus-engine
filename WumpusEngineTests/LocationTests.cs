@@ -44,22 +44,22 @@ namespace WumpusEngineTests
             var north = new Location(Row, Column).ToDirection(Direction.North);
             var northWrap = new Location(0, Column).ToDirection(Direction.North);
             var east = new Location(Row, Column).ToDirection(Direction.East);
-            var eastWrap = new Location(Row, Map.MapWidth - 1).ToDirection(Direction.East);
+            var eastWrap = new Location(Row, WumpusMap.MapWidth - 1).ToDirection(Direction.East);
             var south = new Location(Row, Column).ToDirection(Direction.South);
-            var southWrap = new Location(Map.MapHeight - 1, Column).ToDirection(Direction.South);
+            var southWrap = new Location(WumpusMap.MapHeight - 1, Column).ToDirection(Direction.South);
             var west = new Location(Row, Column).ToDirection(Direction.West);
             var westWrap = new Location(Row, 0).ToDirection(Direction.West);
 
             Assert.Multiple(() =>
             {
                 Assert.That(north, Is.EqualTo(new Location(Row - 1, Column)));
-                Assert.That(northWrap, Is.EqualTo(new Location(Map.MapHeight - 1, Column)));
+                Assert.That(northWrap, Is.EqualTo(new Location(WumpusMap.MapHeight - 1, Column)));
                 Assert.That(east, Is.EqualTo(new Location(Row, Column + 1)));
                 Assert.That(eastWrap, Is.EqualTo(new Location(Row, 0)));
                 Assert.That(south, Is.EqualTo(new Location(Row + 1, Column)));
                 Assert.That(southWrap, Is.EqualTo(new Location(0, Column)));
                 Assert.That(west, Is.EqualTo(new Location(Row, Column - 1)));
-                Assert.That(westWrap, Is.EqualTo(new Location(Row, Map.MapWidth - 1)));
+                Assert.That(westWrap, Is.EqualTo(new Location(Row, WumpusMap.MapWidth - 1)));
                 Assert.Throws<ArgumentOutOfRangeException>(() => _ = new Location(Row, Column).ToDirection((Direction)42));
             });
         }

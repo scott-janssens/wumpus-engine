@@ -7,6 +7,9 @@ public class Cavern
 {
     private readonly IEventAggregator _eventAggregator;
 
+    public bool TraverseTag { get; set; }
+    public bool TunnelTag2 { get; set; }
+
     public Cavern? North { get; set; }
     public Cavern? East { get; set; }
     public Cavern? South { get; set; }
@@ -37,7 +40,7 @@ public class Cavern
     public bool HasBat
     {
         get => _hasBat;
-        internal set
+        set
         {
             _hasBat = value;
             if (value)
@@ -56,7 +59,7 @@ public class Cavern
     public Direction? PlayerDirection
     {
         get => _direction;
-        internal set
+        set
         {
             if (_direction != value)
             {
@@ -66,6 +69,8 @@ public class Cavern
             }
         }
     }
+
+    public bool HasPlayer => _direction != null;
 
     public Location Location { get; }
 

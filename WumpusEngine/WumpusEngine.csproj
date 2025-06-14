@@ -9,6 +9,17 @@
     <Authors>Scott Janssens</Authors>
     <RepositoryUrl>https://github.com/scott-janssens/wumpus-engine</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>An implementation of the logic for the classic Wumpus game.</Description>
+    <Copyright>Copyright 2023 Scott Janssens</Copyright>
+    <PackageProjectUrl>https://github.com/scott-janssens/wumpus-engine</PackageProjectUrl>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <AssemblyVersion>1.0.2</AssemblyVersion>
+    <PackageOutputPath>D:\Local NuGet</PackageOutputPath>
+    <Version>1.0.7-beta.9</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +46,13 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

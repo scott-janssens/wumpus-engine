@@ -14,7 +14,7 @@ public class Engine
     /// <summary>
     /// The Map object of the current game.
     /// </summary>
-    public Map Map { get; private set; } = null!;
+    public WumpusMap Map { get; private set; } = null!;
 
     /// <summary>
     /// The location of the player.
@@ -73,7 +73,7 @@ public class Engine
 
         _random = random;
         _lastBatMoved = null;
-        Map = new Map(_eventAggregator, difficultyOptions, random);
+        Map = new WumpusMap(_eventAggregator, difficultyOptions, random);
 
         PlayerLocation = null!;
         while (PlayerLocation == null)
@@ -233,7 +233,7 @@ public class Engine
 
     private Location GetRandomLocation()
     {
-        return new Location(_random.Next(Map.MapHeight), _random.Next(Map.MapWidth));
+        return new Location(_random.Next(WumpusMap.MapHeight), _random.Next(WumpusMap.MapWidth));
     }
 
     public void EndGame(GameState result)
