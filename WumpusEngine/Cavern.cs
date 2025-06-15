@@ -7,8 +7,8 @@ public class Cavern
 {
     private readonly IEventAggregator _eventAggregator;
 
-    public bool TraverseTag { get; set; }
-    public bool TunnelTag2 { get; set; }
+    public bool[] Traversed { get; private set; } = new bool[4];
+    public void ClearTraversed() => Traversed = new bool[4];
 
     public Cavern? North { get; set; }
     public Cavern? East { get; set; }
@@ -74,9 +74,9 @@ public class Cavern
 
     public Location Location { get; }
 
-    public Cavern(IEventAggregator eventAggregaor, Location location)
+    public Cavern(IEventAggregator eventAggregator, Location location)
     {
-        _eventAggregator = eventAggregaor;
+        _eventAggregator = eventAggregator;
         Location = location;
     }
 

@@ -6,6 +6,7 @@ public class WumpusMap
 {
     private readonly IEventAggregator _eventAggregator;
     private IRandom _random;
+    private List<Cavern>? _traversal;
 
     public const uint MapWidth = 8;
     public const uint MapHeight = 6;
@@ -189,114 +190,85 @@ public class WumpusMap
     /// </summary>
     public IList<Cavern> TraverseToCell(Cavern start, Location end, bool revealed)
     {
-        var route = new Stack<Cavern>();
-
+        _traversal = null;
         ClearTraverseTags();
-        Traverse(start, end, null, route, revealed);
+        Traverse(start, end, null, new List<Cavern>(), revealed);
 
-        return route.ToList();
+        return _traversal ?? new List<Cavern>();
     }
 
     private void ClearTraverseTags()
     {
         foreach (var cavern in Caverns)
         {
-            cavern.TraverseTag = false;
-            cavern.TunnelTag2 = false;
+            cavern.ClearTraversed();
         }
     }
 
-    private bool Traverse(Cavern cavern, Location end, Direction? entrance, Stack<Cavern> route, bool revealed)
+    private bool Traverse(Cavern cavern, Location end, Direction? entrance, List<Cavern> route, bool revealed)
     {
-        Cavern? adjacent;
+        if (_traversal != null && _traversal.Count == route.Count + 1)
+        {
+            return false;
+        }
+
+        route.Add(cavern);
 
         if (cavern.Location.Equals(end))
         {
+            _traversal = route.ToList();
+            route.Remove(cavern);
             return true;
         }
 
-        if (cavern.TraverseTag || (revealed && !cavern.IsRevealed)) return false;
+        Cavern? adjacent;
 
-        if (cavern.IsCave)
+        if (cavern.IsCave || cavern.NumExits < 4)
         {
             foreach (var direction in Directions.All)
             {
-                adjacent = cavern[direction];
-                if (adjacent != null)
+                if (direction == entrance || cavern.Traversed[(int)direction])
                 {
-                    cavern.TraverseTag = true;
-                    if (Traverse(adjacent, end, Directions.Opposite(direction), route, revealed))
-                    {
-                        route.Push(adjacent);
-                        return true;
-                    }
+                    continue;
+                }
+
+                adjacent = cavern[direction];
+
+                if (adjacent != null && (!(revealed ^ adjacent.IsRevealed) || adjacent.IsRevealed))
+                {
+                    cavern.Traversed[(int)direction] = true;
+                    Traverse(adjacent, end, Directions.Opposite(direction), route, revealed);
+                    cavern.Traversed[(int)direction] = false;
                 }
             }
         }
         else
         {
-            if (cavern.NumExits == 4)
-            {
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
-                var direction = entrance switch
-                {
-                    Direction.North => Direction.West,
-                    Direction.East => Direction.South,
-                    Direction.South => Direction.East,
-                    Direction.West => Direction.North,
-                    null => Direction.North
-                };
+            var direction = entrance switch
+            {
+                Direction.North => Direction.West,
+                Direction.East => Direction.South,
+                Direction.South => Direction.East,
+                Direction.West => Direction.North,
+                null => Direction.North
+            };
 #pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 
-                if (direction == Direction.North || direction == Direction.West)
-                {
-                    if (cavern.TraverseTag)
-                    {
-                        return false;
-                    }
-
-                    cavern.TraverseTag = true;
-                }
-                else
-                {
-                    if (cavern.TunnelTag2)
-                    {
-                        return false;
-                    }
-
-                    cavern.TunnelTag2 = true;
-                }
-
-                adjacent = GetAdjacentCell(cavern, direction);
-
-                if (Traverse(adjacent, end, Directions.Opposite(direction), route, revealed))
-                {
-                    route.Push(adjacent);
-                    return true;
-                }
-            }
-            else
+            if (!cavern.Traversed[(int)direction])
             {
-                cavern.TraverseTag = true;
-                foreach (var direction in Directions.All)
-                {
-                    if (direction == entrance)
-                    {
-                        continue;
-                    }
+                adjacent = cavern[direction]!;
 
-                    if ((adjacent = cavern[direction]) != null)
-                    {
-                        if (Traverse(adjacent, end, Directions.Opposite(direction), route, revealed))
-                        {
-                            route.Push(adjacent);
-                            return true;
-                        }
-                    }
+                if (!(revealed ^ adjacent.IsRevealed) || adjacent.IsRevealed)
+                {
+                    cavern.Traversed[(int)direction] = true;
+                    Traverse(adjacent, end, Directions.Opposite(direction), route, revealed);
+                    cavern.Traversed[(int)direction] = false;
                 }
             }
         }
 
+        route.Remove(cavern);
         return false;
     }
 
